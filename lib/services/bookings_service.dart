@@ -10,6 +10,7 @@ class BookingsService {
 
   Future<Map<String, dynamic>> createBooking({
     String? tenantId,
+    String? bedId,
     required String buildingId,
     required String category,
     required String moveInDate,
@@ -20,12 +21,15 @@ class BookingsService {
     required String guestName,
     required String email,
     required String phone,
+    required String sharingType,
+    required String bedNumber,
   }) async {
     try {
       final resp = await _client.dio.post(
         ApiEndpoints.bookings,
         data: {
           if (tenantId != null) 'tenantId': tenantId,
+          if (bedId != null) 'bedId': bedId,
           'buildingId': buildingId,
           'category': category,
           'moveInDate': moveInDate,
@@ -36,6 +40,12 @@ class BookingsService {
           'guestName': guestName,
           'email': email,
           'phone': phone,
+          'sharingType': sharingType,
+          'bedNumber': bedNumber,
+          'bedFilling': {
+            'sharingType': sharingType,
+            'bedNumber': bedNumber,
+          },
         },
       );
       return resp.data as Map<String, dynamic>;

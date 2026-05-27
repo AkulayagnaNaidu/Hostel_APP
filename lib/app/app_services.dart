@@ -1,6 +1,7 @@
 import '../core/network/api_client.dart';
 import '../core/storage/secure_storage_service.dart';
 import '../services/auth_service.dart';
+import '../services/beds_service.dart';
 import '../services/bookings_service.dart';
 import '../services/buildings_service.dart';
 import '../services/complaints_service.dart';
@@ -14,6 +15,7 @@ class AppServices {
   static late final ApiClient apiClient;
   static late final AuthService auth;
   static late final BuildingsService buildings;
+  static late final BedsService beds;
   static late final BookingsService bookings;
   static late final PaymentsService payments;
   static late final ComplaintsService complaints;
@@ -25,6 +27,7 @@ class AppServices {
     apiClient = ApiClient(secureStorage);
     auth = AuthService(apiClient, secureStorage);
     buildings = BuildingsService(apiClient);
+    beds = BedsService(apiClient);
     bookings = BookingsService(apiClient);
     payments = PaymentsService(apiClient);
     complaints = ComplaintsService(apiClient);

@@ -8,15 +8,16 @@ import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart' show kIsWeb;
 
+import 'app/app_navigation.dart';
 import 'app/app_services.dart';
+import 'app/app_session.dart';
+import 'app/app_state.dart';
 import 'core/utils/api_exception.dart';
+import 'services/beds_service.dart';
 import 'data/dummy_properties.dart';
 import 'models/property.dart';
 import 'services/buildings_service.dart';
 import 'widgets/property_image.dart';
-
-final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
-final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 /// Live catalog from API (falls back to [allDummyProperties] offline).
 final ValueNotifier<List<Property>> propertyCatalogNotifier =
@@ -29,8 +30,8 @@ Future<void> main() async {
   await dotenv.load(fileName: '.env');
   await AppServices.init();
   AppServices.apiClient.onUnauthorized = () async {
-    await AppServices.auth.logout();
-    savedNameNotifier.value = null;
+    await AppSession.logout();
+    AppNavigation.goToProfileSignIn();
   };
   runApp(const LivoraApp());
   unawaited(_bootstrapCatalog());
@@ -65,9 +66,47 @@ class LivoraApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF4F46E5)),
         useMaterial3: true,
       ),
-      home: const WelcomeScreen(),
+      home: const AppRoot(),
       debugShowCheckedModeBanner: false,
     );
+  }
+}
+
+/// Splash: restore session, then welcome or main shell.
+class AppRoot extends StatefulWidget {
+  const AppRoot({super.key});
+
+  @override
+  State<AppRoot> createState() => _AppRootState();
+}
+
+class _AppRootState extends State<AppRoot> {
+  bool _ready = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _bootstrap();
+  }
+
+  Future<void> _bootstrap() async {
+    await AppSession.hydrateFromStorage();
+    if (mounted) setState(() => _ready = true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_ready) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(color: Color(0xFF4F46E5)),
+        ),
+      );
+    }
+    if (AppServices.auth.isLoggedIn.value) {
+      return const MainScreen();
+    }
+    return const WelcomeScreen();
   }
 }
 
@@ -214,6 +253,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
                             context,
                             MaterialPageRoute(builder: (context) => const MainScreen()),
                           );
+                          AppNavigation.goToHome();
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.white,
@@ -343,7 +383,7 @@ class _MainScreenState extends State<MainScreen> {
   Widget _buildNavItem(int index, IconData icon, String label, int activeIndex) {
     final bool isSelected = index == activeIndex;
     return GestureDetector(
-      onTap: () => mainTabIndexNotifier.value = index,
+      onTap: () => AppNavigation.goToTab(index),
       behavior: HitTestBehavior.opaque,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -814,12 +854,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Padding(
                 padding: const EdgeInsets.only(right: 16.0),
                 child: GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const ProfileScreen()),
-                    );
-                  },
+                  onTap: () => AppNavigation.goToTab(AppNavigation.tabProfile),
                 child: ValueListenableBuilder<XFile?>(
                   valueListenable: profileImageNotifier,
                   builder: (context, imageFile, child) {
@@ -1173,9 +1208,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ElevatedButton(
             onPressed: () async {
               if (!AppServices.auth.isLoggedIn.value) {
-                scaffoldMessengerKey.currentState?.showSnackBar(
-                  const SnackBar(content: Text('Sign in to send an SOS alert')),
-                );
+                AppNavigation.promptSignIn('Sign in to send an SOS alert');
                 return;
               }
               try {
@@ -1794,7 +1827,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
             if (Navigator.canPop(context)) {
               Navigator.pop(context);
             } else {
-              mainTabIndexNotifier.value = 0;
+              AppNavigation.goToHome();
             }
           },
         ),
@@ -2197,8 +2230,25 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                       onPressed: () async {
                         Navigator.pop(context);
                         final buildingId = widget.property.id;
-                        if (buildingId == null || !AppServices.auth.isLoggedIn.value) {
-                          _showSuccessDialog();
+                        if (!AppServices.auth.isLoggedIn.value) {
+                          AppNavigation.promptSignIn('Sign in to complete your booking');
+                          return;
+                        }
+                        if (buildingId == null) {
+                          scaffoldMessengerKey.currentState?.showSnackBar(
+                            const SnackBar(
+                              content: Text('This property cannot be booked online yet'),
+                              backgroundColor: Colors.orange,
+                            ),
+                          );
+                          return;
+                        }
+                        if (nameController.text.trim().isEmpty ||
+                            emailController.text.trim().isEmpty ||
+                            phoneController.text.trim().isEmpty) {
+                          scaffoldMessengerKey.currentState?.showSnackBar(
+                            const SnackBar(content: Text('Please fill all personal details')),
+                          );
                           return;
                         }
                         try {
@@ -2206,8 +2256,16 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                           final moveInStr =
                               '${moveIn.year}-${moveIn.month.toString().padLeft(2, '0')}-${moveIn.day.toString().padLeft(2, '0')}';
                           final total = widget.property.price * stayDuration;
+                          final sharingType =
+                              BedsService.sharingTypeFromRoomLabel(selectedRoomType);
+                          var bed = await AppServices.beds.findAvailableBed(
+                            buildingId: buildingId,
+                            sharingType: sharingType,
+                          );
+                          bed ??= BedsService.fallback(sharingType);
                           await AppServices.bookings.createBooking(
                             buildingId: buildingId,
+                            bedId: bed.bedId,
                             category: selectedRoomType.contains('Single') ? 'Premium' : 'Standard',
                             moveInDate: moveInStr,
                             totalAmount: total,
@@ -2217,8 +2275,12 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                             guestName: nameController.text.trim(),
                             email: emailController.text.trim(),
                             phone: phoneController.text.trim(),
+                            sharingType: bed.sharingType,
+                            bedNumber: bed.bedNumber,
                           );
+                          if (!context.mounted) return;
                           _showSuccessDialog();
+                          AppNavigation.goToHome();
                         } on ApiException catch (e) {
                           scaffoldMessengerKey.currentState?.showSnackBar(
                             SnackBar(content: Text(e.message), backgroundColor: Colors.red),
@@ -3063,15 +3125,6 @@ class _SectionTitle extends StatelessWidget {
   }
 }
 
-final ValueNotifier<Set<Property>> savedPropertiesNotifier = ValueNotifier<Set<Property>>({});
-final ValueNotifier<XFile?> profileImageNotifier = ValueNotifier<XFile?>(null);
-final ValueNotifier<int> mainTabIndexNotifier = ValueNotifier<int>(0);
-final ValueNotifier<String?> savedNameNotifier = ValueNotifier<String?>(null);
-final ValueNotifier<String?> savedEmailNotifier = ValueNotifier<String?>(null);
-final ValueNotifier<String?> savedPhoneNotifier = ValueNotifier<String?>(null);
-final ValueNotifier<String?> savedEmergencyNameNotifier = ValueNotifier<String?>('John Doe (Father)');
-final ValueNotifier<String?> savedEmergencyPhoneNotifier = ValueNotifier<String?>('9876543210');
-
 class ResidentPortalScreen extends StatelessWidget {
   const ResidentPortalScreen({super.key});
 
@@ -3670,9 +3723,7 @@ class ResidentPortalScreen extends StatelessWidget {
                         child: ElevatedButton(
                           onPressed: () async {
                             if (!AppServices.auth.isLoggedIn.value) {
-                              scaffoldMessengerKey.currentState?.showSnackBar(
-                                const SnackBar(content: Text('Sign in to submit a complaint')),
-                              );
+                              AppNavigation.promptSignIn('Sign in to submit a complaint');
                               return;
                             }
                             if (titleController.text.trim().isEmpty || descController.text.trim().isEmpty) {
@@ -4304,7 +4355,7 @@ class SavedScreen extends StatelessWidget {
             if (Navigator.canPop(context)) {
               Navigator.pop(context);
             } else {
-              mainTabIndexNotifier.value = 0;
+              AppNavigation.goToHome();
             }
           },
         ),
@@ -4437,8 +4488,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       if (_isLoginMode) {
         final user = await AppServices.auth.login(email: email, password: password);
-        savedNameNotifier.value = user.name ?? email.split('@').first;
-        savedEmailNotifier.value = email;
+        await AppSession.applyAuthUser(user, email: email);
       } else {
         final user = await AppServices.auth.register(
           name: _nameController.text.trim(),
@@ -4446,9 +4496,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
           password: password,
           phone: _phoneController.text.trim(),
         );
-        savedNameNotifier.value = user.name ?? _nameController.text.trim();
-        savedEmailNotifier.value = email;
-        savedPhoneNotifier.value = _phoneController.text.trim();
+        await AppSession.applyAuthUser(
+          user,
+          email: email,
+          phone: _phoneController.text.trim(),
+        );
       }
       if (!mounted) return;
       scaffoldMessengerKey.currentState?.showSnackBar(
@@ -4457,9 +4509,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           backgroundColor: Colors.green,
         ),
       );
-      if (_isLoginMode) {
-        _navigateToHome();
-      }
+      AppNavigation.goToHome();
     } on ApiException catch (e) {
       scaffoldMessengerKey.currentState?.showSnackBar(
         SnackBar(content: Text(e.message), backgroundColor: Colors.red),
@@ -4532,12 +4582,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       ),
     );
-  }
-
-  void _navigateToHome() {
-    if (!mounted) return;
-    mainTabIndexNotifier.value = 0;
-    Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
   void _showOTPDialog(BuildContext context) {
@@ -4643,7 +4687,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   await Future.delayed(const Duration(milliseconds: 1500));
 
                   if (!mounted) return;
-                  _navigateToHome();
+                  AppNavigation.goToHome();
 
                   scaffoldMessengerKey.currentState?.showSnackBar(
                     const SnackBar(
@@ -4681,13 +4725,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<String?>(
-      valueListenable: savedNameNotifier,
-      builder: (context, name, child) {
-        if (name == null) {
+    return ValueListenableBuilder<bool>(
+      valueListenable: AppServices.auth.isLoggedIn,
+      builder: (context, loggedIn, child) {
+        if (!loggedIn) {
           return _buildAuthView();
         }
-        return _buildProfileDetailsView(name);
+        return _buildProfileDetailsView(savedNameNotifier.value ?? 'Resident');
       },
     );
   }
@@ -4701,11 +4745,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         foregroundColor: Colors.black,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            mainTabIndexNotifier.value = 0;
-            // Ensure any dialogs are closed
-            Navigator.of(context).popUntil((route) => route.isFirst);
-          },
+          onPressed: AppNavigation.goToHome,
         ),
       ),
       body: SingleChildScrollView(
@@ -4811,21 +4851,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            mainTabIndexNotifier.value = 0;
-            // Ensure any dialogs are closed
-            Navigator.of(context).popUntil((route) => route.isFirst);
-          },
+          onPressed: AppNavigation.goToHome,
         ),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout, color: Colors.red),
             onPressed: () async {
-              await AppServices.auth.logout();
-              savedNameNotifier.value = null;
-              savedEmailNotifier.value = null;
-              savedPhoneNotifier.value = null;
-              scaffoldMessengerKey.currentState?.showSnackBar(const SnackBar(content: Text('Logged out successfully')));
+              await AppSession.logout();
+              if (!context.mounted) return;
+              scaffoldMessengerKey.currentState?.showSnackBar(
+                const SnackBar(content: Text('Logged out successfully')),
+              );
             },
           ),
         ],
@@ -4981,11 +5017,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const SizedBox(height: 20),
             TextButton(
-              onPressed: () {
-                savedNameNotifier.value = null;
-                savedEmailNotifier.value = null;
-                savedPhoneNotifier.value = null;
-                scaffoldMessengerKey.currentState?.showSnackBar(const SnackBar(content: Text('Logged out successfully')));
+              onPressed: () async {
+                await AppSession.logout();
+                scaffoldMessengerKey.currentState?.showSnackBar(
+                  const SnackBar(content: Text('Logged out successfully')),
+                );
               },
               child: const Text('Logout from Account', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
             ),
