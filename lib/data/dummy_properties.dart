@@ -4,6 +4,7 @@ final List<Property> allDummyProperties = [
   Property(
     title: 'Starlight Men\'s PG', 
     location: 'Koramangala, Bangalore', 
+    city: 'Bengaluru',
     price: 12000, 
     rating: 4.8, 
     imageUrl: 'assets/images/property_1.jpg', 
@@ -18,6 +19,7 @@ final List<Property> allDummyProperties = [
   Property(
     title: 'Elite Boys Hostel', 
     location: 'Indiranagar, Bangalore', 
+    city: 'Bengaluru',
     price: 9500, 
     rating: 4.2, 
     imageUrl: 'assets/images/property_2.jpg', 
@@ -31,6 +33,7 @@ final List<Property> allDummyProperties = [
   Property(
     title: 'Urban Nest Men\'s', 
     location: 'Gachibowli, Hyderabad', 
+    city: 'Hyderabad',
     price: 11000, 
     rating: 4.5, 
     imageUrl: 'assets/images/property_3.jpg', 
@@ -44,6 +47,7 @@ final List<Property> allDummyProperties = [
   Property(
     title: 'Comfort Stay Boys', 
     location: 'Ameerpet, Hyderabad', 
+    city: 'Hyderabad',
     price: 8500, 
     rating: 4.0, 
     imageUrl: 'assets/images/property_1.jpg', 
@@ -57,6 +61,7 @@ final List<Property> allDummyProperties = [
   Property(
     title: 'Pioneer Men\'s Living', 
     location: 'Andheri, Mumbai', 
+    city: 'Mumbai',
     price: 16000, 
     rating: 4.7, 
     imageUrl: 'assets/images/property_2.jpg', 
@@ -72,6 +77,7 @@ final List<Property> allDummyProperties = [
   Property(
     title: 'SafeHaven Women\'s', 
     location: 'HSR Layout, Bangalore', 
+    city: 'Bengaluru',
     price: 13500, 
     rating: 4.9, 
     imageUrl: 'assets/images/property_2.jpg', 
@@ -86,6 +92,7 @@ final List<Property> allDummyProperties = [
   Property(
     title: 'Rosewood Girls Hostel', 
     location: 'BTM Layout, Bangalore', 
+    city: 'Bengaluru',
     price: 10000, 
     rating: 4.4, 
     imageUrl: 'assets/images/property_3.jpg', 
@@ -99,6 +106,7 @@ final List<Property> allDummyProperties = [
   Property(
     title: 'Queen\'s PG', 
     location: 'Madhapur, Hyderabad', 
+    city: 'Hyderabad',
     price: 12500, 
     rating: 4.6, 
     imageUrl: 'assets/images/property_1.jpg', 
@@ -112,6 +120,7 @@ final List<Property> allDummyProperties = [
   Property(
     title: 'Blossom Women\'s Stay', 
     location: 'KPHB, Hyderabad', 
+    city: 'Hyderabad',
     price: 9000, 
     rating: 4.1, 
     imageUrl: 'assets/images/property_2.jpg', 
@@ -125,6 +134,7 @@ final List<Property> allDummyProperties = [
   Property(
     title: 'Aura Girls PG', 
     location: 'Powai, Mumbai', 
+    city: 'Mumbai',
     price: 18000, 
     rating: 4.8, 
     imageUrl: 'assets/images/property_3.jpg', 
@@ -140,6 +150,7 @@ final List<Property> allDummyProperties = [
   Property(
     title: 'Sunrise Co-Living', 
     location: 'Whitefield, Bangalore', 
+    city: 'Bengaluru',
     price: 15000, 
     rating: 4.9, 
     imageUrl: 'assets/images/property_2.jpg', 
@@ -153,6 +164,7 @@ final List<Property> allDummyProperties = [
   Property(
     title: 'Nexus Co-Living', 
     location: 'Marathahalli, Bangalore', 
+    city: 'Bengaluru',
     price: 14000, 
     rating: 4.5, 
     imageUrl: 'assets/images/property_3.jpg', 
@@ -166,6 +178,7 @@ final List<Property> allDummyProperties = [
   Property(
     title: 'The Hub Co-Live', 
     location: 'Kondapur, Hyderabad', 
+    city: 'Hyderabad',
     price: 16500, 
     rating: 4.7, 
     imageUrl: 'assets/images/property_1.jpg', 
@@ -179,6 +192,7 @@ final List<Property> allDummyProperties = [
   Property(
     title: 'Together Living', 
     location: 'Bandra, Mumbai', 
+    city: 'Mumbai',
     price: 22000, 
     rating: 4.8, 
     imageUrl: 'assets/images/property_2.jpg', 
@@ -192,6 +206,7 @@ final List<Property> allDummyProperties = [
   Property(
     title: 'Eco Space Co-Live', 
     location: 'Pune', 
+    city: 'Pune',
     price: 12000, 
     rating: 4.3, 
     imageUrl: 'assets/images/property_3.jpg', 
@@ -207,6 +222,7 @@ final List<Property> allDummyProperties = [
   Property(
     title: 'Zenith Student Housing', 
     location: 'North Campus, Delhi', 
+    city: 'Delhi',
     price: 10500, 
     rating: 4.6, 
     imageUrl: 'assets/images/property_3.jpg', 
@@ -220,6 +236,7 @@ final List<Property> allDummyProperties = [
   Property(
     title: 'Scholar\'s PG', 
     location: 'South Campus, Delhi', 
+    city: 'Delhi',
     price: 11000, 
     rating: 4.5, 
     imageUrl: 'assets/images/property_1.jpg', 
@@ -233,6 +250,7 @@ final List<Property> allDummyProperties = [
   Property(
     title: 'Campus Stay', 
     location: 'Koramangala, Bangalore', 
+    city: 'Bengaluru',
     price: 9500, 
     rating: 4.2, 
     imageUrl: 'assets/images/property_2.jpg', 
@@ -246,6 +264,7 @@ final List<Property> allDummyProperties = [
   Property(
     title: 'UniLife Hostel', 
     location: 'Pune', 
+    city: 'Pune',
     price: 8500, 
     rating: 4.0, 
     imageUrl: 'assets/images/property_3.jpg', 
@@ -259,6 +278,7 @@ final List<Property> allDummyProperties = [
   Property(
     title: 'Bright Minds PG', 
     location: 'Chennai', 
+    city: 'Chennai',
     price: 7500, 
     rating: 4.1, 
     imageUrl: 'assets/images/property_1.jpg', 
@@ -274,6 +294,7 @@ final List<Property> allDummyProperties = [
   Property(
     title: 'Corporate Stay', 
     location: 'Cyber City, Gurgaon', 
+    city: 'Gurgaon',
     price: 18000, 
     rating: 4.7, 
     imageUrl: 'assets/images/property_1.jpg', 
@@ -287,6 +308,7 @@ final List<Property> allDummyProperties = [
   Property(
     title: 'Exec Living', 
     location: 'Hitech City, Hyderabad', 
+    city: 'Hyderabad',
     price: 16000, 
     rating: 4.6, 
     imageUrl: 'assets/images/property_2.jpg', 
@@ -300,6 +322,7 @@ final List<Property> allDummyProperties = [
   Property(
     title: 'Pro Stay PG', 
     location: 'Bellandur, Bangalore', 
+    city: 'Bengaluru',
     price: 14500, 
     rating: 4.4, 
     imageUrl: 'assets/images/property_3.jpg', 
@@ -313,6 +336,7 @@ final List<Property> allDummyProperties = [
   Property(
     title: 'Business Nest', 
     location: 'BKC, Mumbai', 
+    city: 'Mumbai',
     price: 25000, 
     rating: 4.8, 
     imageUrl: 'assets/images/property_1.jpg', 
@@ -326,6 +350,7 @@ final List<Property> allDummyProperties = [
   Property(
     title: 'Techies Home', 
     location: 'OMR, Chennai', 
+    city: 'Chennai',
     price: 12000, 
     rating: 4.3, 
     imageUrl: 'assets/images/property_2.jpg', 

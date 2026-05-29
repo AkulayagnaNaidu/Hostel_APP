@@ -18,6 +18,8 @@ class Property {
   final String? id;
   final String title;
   final String location;
+  /// Canonical city used for filters (e.g. "Bengaluru").
+  final String city;
   final int price;
   final double rating;
   final String imageUrl;
@@ -31,6 +33,7 @@ class Property {
     this.id,
     required this.title,
     required this.location,
+    required this.city,
     required this.price,
     required this.rating,
     required this.imageUrl,
@@ -58,7 +61,8 @@ class Property {
         ? ratingRaw.toDouble()
         : double.tryParse('$ratingRaw') ?? 4.0;
 
-    final city = json['locationCity']?.toString() ?? '';
+    final cityRaw = json['locationCity']?.toString() ?? '';
+    final city = canonicalizeCity(cityRaw);
     final address = json['address']?.toString() ?? '';
     final location =
         [address, city].where((s) => s.isNotEmpty).join(', ');
@@ -72,6 +76,7 @@ class Property {
       id: json['_id']?.toString(),
       title: json['name']?.toString() ?? 'Hostel',
       location: location.isEmpty ? city : location,
+      city: city,
       price: price,
       rating: rating,
       imageUrl: imageUrl,
@@ -82,15 +87,41 @@ class Property {
     );
   }
 
+  /// Normalizes backend city spellings/aliases into a single canonical display.
+  ///
+  /// Policy: show canonical city (e.g. "Bengaluru") everywhere, but accept
+  /// common aliases from backend or persisted UI selections (e.g. "Bangalore").
+  static String canonicalizeCity(String? input) {
+    final raw = (input ?? '').trim();
+    if (raw.isEmpty) return '';
+    final key = raw.toLowerCase();
+    if (key == 'bangalore' || key == 'bengaluru' || key == 'bengalore') {
+      return 'Bengaluru';
+    }
+    return raw;
+  }
+
   static String _categoryFromGender(String? genderType) {
-    switch (genderType?.toLowerCase()) {
+    final raw = (genderType ?? '').trim().toLowerCase();
+    switch (raw) {
+      case 'boys':
       case 'male':
+      case 'men':
+      case "men's":
         return "Men's Hostel";
+      case 'girls':
       case 'female':
-        return "Women's";
+      case 'women':
+      case "women's":
+        return "Women's Hostel";
       case 'mixed':
+      case 'co-living':
+      case 'coliving':
+      case 'co living':
         return 'Co-living';
       default:
+        // Backends often send free-form values (e.g. "Boys", "Girls", "Mixed").
+        // Default to the most inclusive bucket instead of misclassifying.
         return 'Co-living';
     }
   }
