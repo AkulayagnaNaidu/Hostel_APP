@@ -51,7 +51,15 @@ Future<void> _bootstrapCatalog() async {
     }
     platformStatsNotifier.value = results[1] as PlatformStats;
   } catch (_) {
-    // Keep offline dummy data
+    // Keep offline dummy data; tell user when live catalog could not load.
+    scaffoldMessengerKey.currentState?.showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Could not load live hostels. Showing offline catalog. Check your internet connection.',
+        ),
+        duration: Duration(seconds: 4),
+      ),
+    );
   }
 }
 

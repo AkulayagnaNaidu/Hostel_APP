@@ -1,6 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Required for release APK — API calls, images, auth (debug/profile had this only). -->
+    <uses-permission android:name="android.permission.INTERNET" />
     <application
-        android:label="hostelhub2"
+        android:label="Livora"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
