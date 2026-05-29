@@ -12,9 +12,9 @@ final ValueNotifier<String?> savedNameNotifier = ValueNotifier<String?>(null);
 final ValueNotifier<String?> savedEmailNotifier = ValueNotifier<String?>(null);
 final ValueNotifier<String?> savedPhoneNotifier = ValueNotifier<String?>(null);
 final ValueNotifier<String?> savedEmergencyNameNotifier =
-    ValueNotifier<String?>('John Doe (Father)');
+    ValueNotifier<String?>(null);
 final ValueNotifier<String?> savedEmergencyPhoneNotifier =
-    ValueNotifier<String?>('9876543210');
+    ValueNotifier<String?>(null);
 final ValueNotifier<Set<Property>> savedPropertiesNotifier =
     ValueNotifier<Set<Property>>({});
 final ValueNotifier<XFile?> profileImageNotifier = ValueNotifier<XFile?>(null);

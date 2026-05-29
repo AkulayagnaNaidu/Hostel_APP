@@ -98,8 +98,8 @@ class BedsService {
           );
         }
       }
-    } on DioException catch (_) {
-      return null;
+    } on DioException catch (e) {
+      _client.throwFromDio(e);
     }
     return null;
   }

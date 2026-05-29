@@ -7,7 +7,6 @@ class AppSession {
   AppSession._();
 
   static Future<void> hydrateFromStorage() async {
-    await AppServices.auth.restoreSession();
     if (!AppServices.auth.isLoggedIn.value) {
       clearLocalProfile();
       return;

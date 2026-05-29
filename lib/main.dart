@@ -17,6 +17,8 @@ import 'services/beds_service.dart';
 import 'data/dummy_properties.dart';
 import 'models/property.dart';
 import 'services/buildings_service.dart';
+import 'widgets/async_state_widgets.dart';
+import 'widgets/hostel_full_details_view.dart';
 import 'widgets/property_image.dart';
 
 /// Live catalog from API (falls back to [allDummyProperties] offline).
@@ -930,7 +932,13 @@ class _HomeScreenState extends State<HomeScreen> {
     if (AppServices.auth.isLoggedIn.value) {
       try {
         notifications = await AppServices.notifications.fetchAll();
-      } catch (_) {}
+      } on ApiException catch (e) {
+        if (context.mounted) {
+          scaffoldMessengerKey.currentState?.showSnackBar(
+            SnackBar(content: Text(e.message), backgroundColor: Colors.red),
+          );
+        }
+      }
     }
     if (!context.mounted) return;
     showModalBottomSheet(
@@ -1912,77 +1920,252 @@ class _ExploreScreenState extends State<ExploreScreen> {
                     itemCount: _filteredProperties.length,
                     itemBuilder: (context, index) {
                       final prop = _filteredProperties[index];
-                      return Card(
-                        elevation: 2,
-                        margin: const EdgeInsets.only(bottom: 16.0),
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.all(12.0),
-                          leading: Hero(
-                            tag: 'image_explore_${prop.title}',
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(8.0),
-                              child: PropertyImage(
-                                imageUrl: prop.imageUrl,
-                                width: 80,
-                                height: 80,
-                              ),
+                      final occupancy = 60 + (index % 4) * 10; // demo indicator
+                      final tags = prop.tags.take(3).toList();
+                      final extraCount = prop.tags.length - tags.length;
+
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.06),
+                              blurRadius: 20,
+                              offset: const Offset(0, 8),
                             ),
-                          ),
-                          title: Text(prop.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                          subtitle: Column(
+                          ],
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(prop.location, style: TextStyle(color: Colors.grey[600])),
-                              const SizedBox(height: 4),
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(16),
+                                    child: PropertyImage(
+                                      imageUrl: prop.imageUrl,
+                                      width: 92,
+                                      height: 92,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 14),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                prop.title,
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: const TextStyle(
+                                                  fontSize: 18,
+                                                  fontWeight: FontWeight.w900,
+                                                  color: Color(0xFF111827),
+                                                ),
+                                              ),
+                                            ),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFFFFF7ED),
+                                                borderRadius: BorderRadius.circular(16),
+                                              ),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  const Icon(Icons.star, size: 16, color: Colors.orange),
+                                                  const SizedBox(width: 4),
+                                                  Text(
+                                                    prop.rating.toString(),
+                                                    style: const TextStyle(fontWeight: FontWeight.bold),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Row(
+                                          children: [
+                                            const Icon(Icons.location_on_outlined, color: Colors.grey, size: 18),
+                                            const SizedBox(width: 4),
+                                            Expanded(
+                                              child: Text(
+                                                prop.location,
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 12),
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    'STARTS FROM',
+                                                    style: TextStyle(
+                                                      color: Colors.grey[500],
+                                                      fontSize: 11,
+                                                      fontWeight: FontWeight.w700,
+                                                      letterSpacing: 0.8,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 2),
+                                                  Text(
+                                                    '₹${prop.price}',
+                                                    style: const TextStyle(
+                                                      fontSize: 20,
+                                                      fontWeight: FontWeight.w900,
+                                                      color: Colors.green,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Row(
+                                                    children: [
+                                                      Icon(Icons.access_time, size: 16, color: Colors.grey[500]),
+                                                      const SizedBox(width: 6),
+                                                      Text(
+                                                        'OCCUPANCY',
+                                                        style: TextStyle(
+                                                          color: Colors.grey[500],
+                                                          fontSize: 11,
+                                                          fontWeight: FontWeight.w700,
+                                                          letterSpacing: 0.8,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  const SizedBox(height: 2),
+                                                  Text(
+                                                    '$occupancy%',
+                                                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            ValueListenableBuilder<Set<Property>>(
+                                              valueListenable: savedPropertiesNotifier,
+                                              builder: (context, savedProps, child) {
+                                                final isSaved = savedProps.contains(prop);
+                                                return IconButton(
+                                                  onPressed: () {
+                                                    final newSet = Set<Property>.from(savedProps);
+                                                    if (isSaved) {
+                                                      newSet.remove(prop);
+                                                    } else {
+                                                      newSet.add(prop);
+                                                      if (prop.id != null && AppServices.auth.isLoggedIn.value) {
+                                                        unawaited(
+                                                          AppServices.tenantPortal.addToWishlist(
+                                                            hostelId: prop.id!,
+                                                            hostelName: prop.title,
+                                                          ),
+                                                        );
+                                                      }
+                                                    }
+                                                    savedPropertiesNotifier.value = newSet;
+                                                  },
+                                                  icon: Icon(
+                                                    isSaved ? Icons.favorite : Icons.favorite_border,
+                                                    color: isSaved ? Colors.red : Colors.grey,
+                                                  ),
+                                                );
+                                              },
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 14),
+                              Wrap(
+                                spacing: 10,
+                                runSpacing: 10,
+                                children: [
+                                  ...tags.map((t) => _ExploreTagChip(text: t)),
+                                  if (extraCount > 0) _ExploreTagChip(text: '+$extraCount More', isMore: true),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
                               Row(
                                 children: [
-                                  const Icon(Icons.star, color: Colors.amber, size: 16),
-                                  const SizedBox(width: 4),
-                                  Text(prop.rating.toString(), style: const TextStyle(fontWeight: FontWeight.bold)),
+                                  Expanded(
+                                    child: OutlinedButton(
+                                      onPressed: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => PropertyDetailsScreen(
+                                              property: prop,
+                                              fullDetailsMode: true,
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                      style: OutlinedButton.styleFrom(
+                                        padding: const EdgeInsets.symmetric(vertical: 16),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                        side: BorderSide(color: Colors.grey[300]!),
+                                      ),
+                                      child: const Text(
+                                        'View Details',
+                                        style: TextStyle(fontWeight: FontWeight.w700, color: Colors.black87),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: ElevatedButton(
+                                      onPressed: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => PropertyDetailsScreen(
+                                              property: prop,
+                                              openBookingOnStart: true,
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color(0xFF4F46E5),
+                                        foregroundColor: Colors.white,
+                                        padding: const EdgeInsets.symmetric(vertical: 16),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                        elevation: 0,
+                                      ),
+                                      child: const Text(
+                                        'Book Now',
+                                        style: TextStyle(fontWeight: FontWeight.w800),
+                                      ),
+                                    ),
+                                  ),
                                 ],
                               ),
                             ],
                           ),
-                          trailing: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              ValueListenableBuilder<Set<Property>>(
-                                valueListenable: savedPropertiesNotifier,
-                                builder: (context, savedProps, child) {
-                                  final isSaved = savedProps.contains(prop);
-                                  return IconButton(
-                                    icon: Icon(
-                                      isSaved ? Icons.favorite : Icons.favorite_border,
-                                      color: isSaved ? Colors.red : Colors.grey,
-                                    ),
-                                    onPressed: () {
-                                      final newSet = Set<Property>.from(savedProps);
-                                      if (isSaved) {
-                                        newSet.remove(prop);
-                                      } else {
-                                        newSet.add(prop);
-                                        if (prop.id != null && AppServices.auth.isLoggedIn.value) {
-                                          unawaited(AppServices.tenantPortal.addToWishlist(
-                                            hostelId: prop.id!,
-                                            hostelName: prop.title,
-                                          ));
-                                        }
-                                      }
-                                      savedPropertiesNotifier.value = newSet;
-                                    },
-                                  );
-                                },
-                              ),
-                            ],
-                          ),
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => PropertyDetailsScreen(property: prop),
-                              ),
-                            );
-                          },
                         ),
                       );
                     },
@@ -2068,14 +2251,71 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
 class PropertyDetailsScreen extends StatefulWidget {
   final Property property;
+  final bool openBookingOnStart;
+  final bool fullDetailsMode;
 
-  const PropertyDetailsScreen({super.key, required this.property});
+  const PropertyDetailsScreen({
+    super.key,
+    required this.property,
+    this.openBookingOnStart = false,
+    this.fullDetailsMode = false,
+  });
 
   @override
   State<PropertyDetailsScreen> createState() => _PropertyDetailsScreenState();
 }
 
 class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
+  late Future<Map<String, dynamic>?> _detailsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    final id = widget.property.id;
+    _detailsFuture = (id != null && id.isNotEmpty)
+        ? AppServices.buildings.fetchPublicBuildingDetails(id)
+        : Future.value(null);
+    if (widget.openBookingOnStart) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _showBookingDialog();
+      });
+    }
+  }
+
+  Widget _buildInlineHostelDetails() {
+    if (!widget.fullDetailsMode) return const SizedBox.shrink();
+
+    return FutureBuilder<Map<String, dynamic>?>(
+      future: _detailsFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const LoadingStateView(message: 'Loading property details…');
+        }
+        if (snapshot.hasError) {
+          return ErrorStateView(
+            message: 'Could not load property details. Please try again.',
+            onRetry: () {
+              setState(() {
+                _detailsFuture = AppServices.buildings.fetchPublicBuildingDetails(
+                  widget.property.id!,
+                );
+              });
+            },
+          );
+        }
+        if (!snapshot.hasData) {
+          return const ErrorStateView(
+            message: 'Property details are not available.',
+          );
+        }
+        return HostelFullDetailsView(
+          data: snapshot.data!,
+          fallbackAmenities: widget.property.tags,
+        );
+      },
+    );
+  }
+
   void _showBookingDialog() {
     final TextEditingController nameController = TextEditingController(text: savedNameNotifier.value);
     final TextEditingController emailController = TextEditingController(text: savedEmailNotifier.value);
@@ -2084,6 +2324,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
     int stayDuration = 6;
     DateTime checkInDate = DateTime.now().add(const Duration(days: 7));
     String selectedPaymentMethod = 'UPI (Google Pay/PhonePe)';
+    bool isSubmitting = false;
 
     showModalBottomSheet(
       context: context,
@@ -2227,14 +2468,17 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: () async {
-                        Navigator.pop(context);
+                      onPressed: isSubmitting
+                          ? null
+                          : () async {
                         final buildingId = widget.property.id;
                         if (!AppServices.auth.isLoggedIn.value) {
+                          Navigator.pop(context);
                           AppNavigation.promptSignIn('Sign in to complete your booking');
                           return;
                         }
                         if (buildingId == null) {
+                          Navigator.pop(context);
                           scaffoldMessengerKey.currentState?.showSnackBar(
                             const SnackBar(
                               content: Text('This property cannot be booked online yet'),
@@ -2251,6 +2495,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                           );
                           return;
                         }
+                        setModalState(() => isSubmitting = true);
                         try {
                           final moveIn = checkInDate;
                           final moveInStr =
@@ -2258,11 +2503,15 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                           final total = widget.property.price * stayDuration;
                           final sharingType =
                               BedsService.sharingTypeFromRoomLabel(selectedRoomType);
-                          var bed = await AppServices.beds.findAvailableBed(
+                          final bed = await AppServices.beds.findAvailableBed(
                             buildingId: buildingId,
                             sharingType: sharingType,
                           );
-                          bed ??= BedsService.fallback(sharingType);
+                          if (bed == null) {
+                            throw ApiException(
+                              'No ${sharingType.toLowerCase()} beds available for this property. Try another room type.',
+                            );
+                          }
                           await AppServices.bookings.createBooking(
                             buildingId: buildingId,
                             bedId: bed.bedId,
@@ -2279,9 +2528,11 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                             bedNumber: bed.bedNumber,
                           );
                           if (!context.mounted) return;
+                          Navigator.pop(context);
                           _showSuccessDialog();
                           AppNavigation.goToHome();
                         } on ApiException catch (e) {
+                          setModalState(() => isSubmitting = false);
                           scaffoldMessengerKey.currentState?.showSnackBar(
                             SnackBar(content: Text(e.message), backgroundColor: Colors.red),
                           );
@@ -2294,8 +2545,18 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                         elevation: 4,
                         shadowColor: const Color(0xFF4F46E5).withOpacity(0.5),
+                        disabledBackgroundColor: const Color(0xFF4F46E5).withOpacity(0.6),
                       ),
-                      child: const Text('Pay & Confirm Booking', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      child: isSubmitting
+                          ? const SizedBox(
+                              height: 24,
+                              width: 24,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Text('Pay & Confirm Booking', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -2498,7 +2759,11 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                     ],
                   ),
                   const SizedBox(height: 24),
-                  _buildVirtualTourButton(context),
+                  if (!widget.fullDetailsMode) _buildVirtualTourButton(context),
+                  if (!widget.fullDetailsMode) const SizedBox(height: 32),
+                  if (widget.fullDetailsMode) const SizedBox(height: 8),
+                  _buildInlineHostelDetails(),
+                  if (!widget.fullDetailsMode) ...[
                   const SizedBox(height: 32),
 
                   const Text('Rent & Inclusion', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
@@ -2656,6 +2921,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                   else
                     ...property.reviews.map((review) => _buildReviewCard(review)).toList(),
                   const SizedBox(height: 120), // Bottom padding for content
+                  ],
                 ],
               ),
             ),
@@ -3103,6 +3369,34 @@ class _RequirementRow extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(child: Text(text, style: const TextStyle(fontSize: 14, color: Colors.black87))),
         ],
+      ),
+    );
+  }
+}
+
+class _ExploreTagChip extends StatelessWidget {
+  final String text;
+  final bool isMore;
+
+  const _ExploreTagChip({required this.text, this.isMore = false});
+
+  @override
+  Widget build(BuildContext context) {
+    final bg = isMore ? const Color(0xFFE9F7EF) : const Color(0xFFF3F4F6);
+    final fg = isMore ? Colors.green[700] : const Color(0xFF374151);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: fg,
+          fontWeight: FontWeight.w700,
+          fontSize: 12,
+        ),
       ),
     );
   }

@@ -20,8 +20,24 @@ class AuthService {
     final token = await _storage.readToken();
     if (token == null || token.isEmpty) {
       isLoggedIn.value = false;
+      currentUser = null;
       return;
     }
+
+    final id = await _storage.readUserId();
+    final role = await _storage.readUserRole();
+    final name = await _storage.readUserName();
+    final email = await _storage.readUserEmail();
+
+    if (id != null && id.isNotEmpty) {
+      currentUser = AuthUser(
+        id: id,
+        name: name,
+        email: email,
+        role: role ?? 'TENANT',
+      );
+    }
+
     isLoggedIn.value = true;
   }
 

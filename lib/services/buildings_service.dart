@@ -59,6 +59,15 @@ class BuildingsService {
     }
   }
 
+  Future<Map<String, dynamic>> fetchPublicBuildingDetails(String id) async {
+    try {
+      final resp = await _client.dio.get(ApiEndpoints.buildingPublic(id));
+      return resp.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      _client.throwFromDio(e);
+    }
+  }
+
   Future<PlatformStats> fetchPublicStats() async {
     try {
       final resp = await _client.dio.get(ApiEndpoints.buildingsPublicStats);
